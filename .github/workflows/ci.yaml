@@ -1,0 +1,33 @@
+# Copyright 2026 BitWise Media Group Ltd
+# SPDX-License-Identifier: MIT
+
+# Continuous integration — thin caller for the org's reusable ci workflow. It
+# discovers the canonical tasks this repo defines (`mise tasks ls --name-only`)
+# and runs `mise run <task>` for each: lint (selene + stylua --check + the
+# toolchain's prose/shell/container/license passes), build (assemble the
+# dist/*.c4z driver packages), and test (the C4-stubbed suites under the
+# mise-pinned Lua 5.1 — deliberately exercising the pure-Lua bit fallback the
+# controllers' LuaJIT never needs). The pinned tooling installs via mise from
+# the toolchain submodule at .mise/ plus this repo's own Lua additions in the
+# root mise.toml.
+#
+# Pinned to a full commit SHA (tag in the comment); Dependabot keeps it fresh.
+
+name: Continuous Integration
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: ["main", "releases/*"]
+
+# the reusable workflow's jobs only need contents:read; grant just that ceiling
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    uses: bitwise-media-group/github-workflows/.github/workflows/ci.yaml@b9c031429f149794bedb5411b08d5a787b8d9959 # v6.0.1
+    with:
+      # the Lua test harness emits no coverage files — skip the Codecov upload
+      coverage: false

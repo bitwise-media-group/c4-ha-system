@@ -1,0 +1,42 @@
+# Copyright 2026 BitWise Media Group Ltd
+# SPDX-License-Identifier: MIT
+
+# Two ecosystems: github-actions keeps the SHA-pinned reusable-workflow callers
+# in .github/workflows current, and gitsubmodule tracks the toolchain submodule
+# at .mise/ (the pinned dev CLIs — stylua, selene, lua, the prose linters —
+# and the task archetypes) so a library release (a new `release` branch head)
+# flows here as a bump.
+version: 2
+updates:
+  # Keep the actions pinned in .github/workflows current.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: deps
+      prefix-development: deps
+      include: scope
+    cooldown:
+      default-days: 7
+      # our own actions and reusable workflows ship straight through — no
+      # cooldown wait
+      exclude:
+        - bitwise-media-group/*
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+  # Track the toolchain submodule's release branch.
+  - package-ecosystem: gitsubmodule
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: deps
+      include: scope
+    cooldown:
+      default-days: 7
+      exclude:
+        - bitwise-media-group/*

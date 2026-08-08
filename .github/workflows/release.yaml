@@ -1,0 +1,81 @@
+# Copyright 2026 BitWise Media Group Ltd
+# SPDX-License-Identifier: MIT
+
+# Caller for the org's reusable release workflow plus one repo-local job. This
+# repo has no .goreleaser.yaml and no zensical.toml, so the reusable side is
+# just the release-please cut (goreleaser/publish, docs, and vanity-tags jobs
+# skip): a versioned tag + CHANGELOG over the Conventional-Commit history.
+# The repo-local upload-drivers job then builds the .c4z driver packages —
+# version.txt was bumped by the release commit, so the build stamps the fresh
+# version into every driver.xml — and attaches them to the GitHub Release,
+# which is what ComposerPro users download.
+#
+# Manifest mode: configuration lives in release-please-config.json and the
+# current version in .release-please-manifest.json at the repo root.
+#
+# Pinned to a full commit SHA (tag in the comment); Dependabot keeps it fresh.
+
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+# Ceiling for the reusable workflow's jobs. GitHub resolves a reusable
+# workflow's permissions as the union of every job and ignores `if:`, so the
+# caller must grant every scope any job declares — even the goreleaser/publish
+# and docs jobs that are skipped here — or the run fails at startup. Each
+# reusable job narrows to its own declared scopes; the jobs that actually run
+# (release-please, upload-drivers) use contents/issues/pull-requests.
+permissions:
+  # create release commits, tags, and GitHub Releases; upload release assets
+  contents: write
+  # release-please creates PR labels via the issues API
+  issues: write
+  # open and update the release PR
+  pull-requests: write
+  # cosign keyless signing (goreleaser) + the docs job's Pages OIDC deploy
+  id-token: write
+  # GitHub build-provenance attestation (goreleaser/publish)
+  attestations: write
+  # artifact storage record for the attestation (goreleaser/publish)
+  artifact-metadata: write
+  # push container images to ghcr (goreleaser dockers_v2, when configured)
+  packages: write
+  # publish the docs site to GitHub Pages (docs job, when a zensical.toml exists)
+  pages: write
+
+jobs:
+  release:
+    uses: bitwise-media-group/github-workflows/.github/workflows/release.yaml@b9c031429f149794bedb5411b08d5a787b8d9959 # v6.0.1
+    with:
+      # author the release PR as the FF Merge App so it can auto-merge (a
+      # GITHUB_TOKEN-authored push fires no workflow_run to trigger the merge)
+      app-client-id: ${{ vars.FF_MERGE_CLIENT_ID }}
+    secrets:
+      # private key for the App that authors the release PR (same App as /merge)
+      app-private-key: ${{ secrets.FF_MERGE_PRIVATE_KEY }}
+
+  # Build the .c4z packages at the released commit and attach them to the
+  # GitHub Release. Plain sh + zip — no language toolchain needed.
+  upload-drivers:
+    needs: release
+    if: needs.release.outputs.release_created
+    runs-on: ubuntu-latest
+    permissions:
+      # upload the .c4z assets to the release
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build drivers
+        run: sh scripts/build.sh
+
+      - name: Attach drivers to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ needs.release.outputs.tag_name }}
+        run: gh release upload "$TAG_NAME" dist/*.c4z
