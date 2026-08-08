@@ -10,6 +10,20 @@ Setup
 1. Add one Home Assistant Climate driver per climate entity.
 2. While the gateway is connected, pick the entity from the Entity Selector
    list, or type the entity_id (e.g. climate.living_room) into Entity ID.
+3. In Composer, bind the room to its thermostat: in the room's bindings
+   (Connections > Room Bindings), set the room's Temperature and Temperature
+   Control to this driver's Room Selection connection. The room's climate
+   (Comfort) tile then tracks this thermostat live. Without the binding the
+   tile shows a generic icon with no state.
+
+The driver deliberately does not auto-bind Room Selection: Control4
+auto-binding attaches every still-unbound room in the project to the driver
+being added, which cross-wires room tiles to the wrong thermostats when
+several rooms and drivers are involved. Bind each room explicitly.
+
+Upgrading from a version that auto-bound Room Selection: check each room's
+Temperature / Temperature Control bindings and repoint any that reference the
+wrong thermostat at the room's own one.
 
 The driver adapts to the entity's capabilities from Home Assistant:
 

@@ -13,6 +13,13 @@
 	<auto_update>false</auto_update>
 	<minimum_os_version>3.3.0</minimum_os_version>
 	<proxies>
+		<!-- Deliberately NO primary="True" here, although commercial
+		     thermostatV2 drivers ship it: applying it to already-instantiated
+		     proxy devices via an in-place driver update restructures the
+		     project item tree in a way Navigator cannot load - it hung at the
+		     splash screen retrying its startup queries until the drivers were
+		     reverted (field incident 2026-08-08). The room tile instead goes
+		     live by keeping the type-7 room connection unbound (see below).  -->
 		<proxy proxybindingid="5001" name="Home Assistant Climate">thermostatV2</proxy>
 	</proxies>
 	<capabilities>
@@ -142,10 +149,18 @@
 				</class>
 			</classes>
 		</connection>
+		<!-- Room binding, attached by Director to the thermostat PROXY device;
+		     the room's Comfort tile tracks whichever thermostat its
+		     Temperature/Temperature Control bindings point at. Deliberately
+		     NOT autobind: a type-7 autobind class captures EVERY still-unbound
+		     room in the project at install time (field incident 2026-08-08:
+		     one driver grabbed four rooms), cross-wiring room tiles to the
+		     wrong thermostats. The installer binds each room to its own
+		     thermostat's Room Selection explicitly. -->
 		<connection>
 			<id>7000</id>
 			<facing>6</facing>
-			<connectionname>Room Temperature</connectionname>
+			<connectionname>Room Selection</connectionname>
 			<type>7</type>
 			<consumer>False</consumer>
 			<audiosource>False</audiosource>
@@ -154,11 +169,11 @@
 			<classes>
 				<class>
 					<classname>TEMPERATURE</classname>
-					<autobind>True</autobind>
+					<autobind>False</autobind>
 				</class>
 				<class>
 					<classname>TEMPERATURE_CONTROL</classname>
-					<autobind>True</autobind>
+					<autobind>False</autobind>
 				</class>
 			</classes>
 		</connection>
