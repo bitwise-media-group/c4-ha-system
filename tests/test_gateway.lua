@@ -117,8 +117,19 @@ ha_sends({ type = 'auth_ok', ha_version = '2026.7.0' })
 sent = drain_client_messages()
 check_eq(Properties['Status'], 'Connected', 'status connected')
 check_eq(Properties['HA Version'], '2026.7.0', 'ha version surfaced')
-check_eq(sent[1].type, 'get_states', 'get_states after auth')
-check_eq(sent[2].type, 'subscribe_events', 'subscribe after auth')
+check_eq(sent[1].type, 'get_config', 'get_config first after auth')
+check_eq(#sent, 1, 'state sync waits for the config result')
+
+-- the unit must be known before any state is pushed
+ha_sends({
+	id = sent[1].id,
+	type = 'result',
+	success = true,
+	result = { unit_system = { temperature = '°C' } },
+})
+sent = drain_client_messages()
+check_eq(sent[1].type, 'get_states', 'get_states after config')
+check_eq(sent[2].type, 'subscribe_events', 'subscribe after config')
 check_eq(sent[2].event_type, 'state_changed', 'subscribed to state_changed')
 local get_states_id = sent[1].id
 local subscribe_id = sent[2].id
@@ -135,6 +146,9 @@ check(stub.last_device('HA_CONNECTION') == nil, 'registration NOT acked with HA_
 local sends_before = #stub.device_sent
 ReceivedFromProxy(1, 'HA_REGISTER', { entity_id = 'cover.patio', device_id = '77' })
 check_eq(#stub.device_sent, sends_before, 'duplicate registration sends nothing')
+
+-- a climate device registers too (seeded from get_states below)
+ReceivedFromProxy(1, 'HA_REGISTER', { entity_id = 'climate.living', device_id = '88' })
 
 -- states arrive: registered device gets its state, connection broadcast fires
 stub.clear_captures()
@@ -161,17 +175,79 @@ ha_sends({
 				friendly_name = 'Garage Door',
 			},
 		},
+		{
+			entity_id = 'climate.living',
+			state = 'heat_cool',
+			attributes = {
+				hvac_modes = { 'off', 'heat', 'cool', 'heat_cool' },
+				fan_modes = { 'auto', 'low', 'high' },
+				min_temp = 7,
+				max_temp = 30,
+				target_temp_step = 0.5,
+				target_temp_low = 20,
+				target_temp_high = 24,
+				current_temperature = 21.5,
+				temperature = json.null,
+				hvac_action = 'idle',
+				supported_features = 386,
+				friendly_name = 'Living Room',
+			},
+		},
 		{ entity_id = 'light.kitchen', state = 'on', attributes = {} },
 	},
 })
 ha_sends({ id = subscribe_id, type = 'result', success = true })
-local pushed = stub.last_device('HA_STATE')
-check(pushed ~= nil and pushed.device_id == 77, 'seed state pushed to device 77')
+local pushed
+for _, entry in ipairs(stub.device_sent) do
+	if entry.command == 'HA_STATE' and entry.device_id == 77 then
+		pushed = entry
+	end
+end
+check(pushed ~= nil, 'seed state pushed to device 77')
 check_eq(pushed.params.entity_id, 'cover.patio', 'seed state entity')
 check_eq(pushed.params.state, 'open', 'seed state flattened: state')
 check_eq(pushed.params.position, 100, 'seed state flattened: position')
 check_eq(pushed.params.supported_features, 15, 'seed state flattened: features')
 check(pushed.params.json == nil, 'no JSON blob on the wire')
+-- cover payload regression: exactly the historical key set, no climate keys
+do
+	local keys = {}
+	for key in pairs(pushed.params) do
+		keys[#keys + 1] = key
+	end
+	table.sort(keys)
+	check_eq(
+		table.concat(keys, ','),
+		'entity_id,position,state,supported_features',
+		'cover push carries exactly the historical keys'
+	)
+end
+
+-- climate seed: whitelisted attrs flattened, lists as CSV, null omitted
+local climate_pushed
+for _, entry in ipairs(stub.device_sent) do
+	if entry.command == 'HA_STATE' and entry.device_id == 88 then
+		climate_pushed = entry
+	end
+end
+check(climate_pushed ~= nil, 'seed state pushed to climate device 88')
+local cp = climate_pushed.params
+check_eq(cp.state, 'heat_cool', 'climate state pushed')
+check_eq(cp.hvac_modes, 'off,heat,cool,heat_cool', 'hvac_modes flattened to CSV')
+check_eq(cp.fan_modes, 'auto,low,high', 'fan_modes flattened to CSV')
+check_eq(cp.target_temp_low, 20, 'target_temp_low as number')
+check_eq(cp.target_temp_high, 24, 'target_temp_high as number')
+check_eq(cp.min_temp, 7, 'min_temp as number')
+check_eq(cp.max_temp, 30, 'max_temp as number')
+check_eq(cp.target_temp_step, 0.5, 'target_temp_step as number')
+check_eq(cp.current_temperature, 21.5, 'current_temperature as number')
+check_eq(cp.hvac_action, 'idle', 'hvac_action string kept')
+check(cp.temperature == nil, 'JSON null temperature omitted')
+check_eq(cp.temperature_unit, 'C', 'server unit injected from get_config')
+check(cp.friendly_name == nil, 'non-whitelisted attribute dropped')
+for key, value in pairs(cp) do
+	check(type(value) ~= 'table', 'climate param ' .. key .. ' is a flat scalar')
+end
 local broadcast = stub.last_proxy('HA_CONNECTION', 1)
 check(
 	broadcast ~= nil and broadcast.params.connected == 'true',
@@ -257,6 +333,54 @@ ReceivedFromProxy(1, 'HA_CALL_SERVICE', {
 })
 sent = drain_client_messages()
 check(sent[1].service_data == nil, 'no empty service_data object')
+
+-- climate range setpoints: both bounds coerced to numbers in the JSON
+stub.clear_captures()
+ReceivedFromProxy(1, 'HA_CALL_SERVICE', {
+	domain = 'climate',
+	service = 'set_temperature',
+	entity_id = 'climate.living',
+	target_temp_low = '21',
+	target_temp_high = '24',
+})
+sent = drain_client_messages()
+check_eq(sent[1].service_data.target_temp_low, 21, 'target_temp_low coerced to number')
+check_eq(sent[1].service_data.target_temp_high, 24, 'target_temp_high coerced to number')
+check_eq(sent[1].target.entity_id, 'climate.living', 'climate target entity set')
+check(sent[1].service_data.domain == nil, 'domain never leaks into service_data')
+check(sent[1].service_data.service == nil, 'service never leaks into service_data')
+check(sent[1].service_data.entity_id == nil, 'entity_id never leaks into service_data')
+
+-- string service fields survive (previously silently dropped)
+stub.clear_captures()
+ReceivedFromProxy(1, 'HA_CALL_SERVICE', {
+	domain = 'climate',
+	service = 'set_hvac_mode',
+	entity_id = 'climate.living',
+	hvac_mode = 'heat_cool',
+})
+sent = drain_client_messages()
+check_eq(sent[1].service_data.hvac_mode, 'heat_cool', 'hvac_mode string survives')
+
+stub.clear_captures()
+ReceivedFromProxy(1, 'HA_CALL_SERVICE', {
+	domain = 'climate',
+	service = 'set_fan_mode',
+	entity_id = 'climate.living',
+	fan_mode = 'low',
+})
+sent = drain_client_messages()
+check_eq(sent[1].service_data.fan_mode, 'low', 'fan_mode string survives')
+
+stub.clear_captures()
+ReceivedFromProxy(1, 'HA_CALL_SERVICE', {
+	domain = 'climate',
+	service = 'set_preset_mode',
+	entity_id = 'climate.living',
+	preset_mode = 'eco',
+})
+sent = drain_client_messages()
+check_eq(sent[1].service_data.preset_mode, 'eco', 'preset_mode string survives')
 
 -- a failed result is tolerated (logged, no crash)
 ha_sends({

@@ -38,6 +38,7 @@ local device_entities = {} -- deviceId -> {entity_id = true, ...}
 local backoff_s = BACKOFF_MIN_S
 local awaiting_pong = false
 local user_disconnected = false
+local ha_unit = 'C' -- HA server temperature unit ('C'|'F'), from get_config
 
 ---------------------------------------------------------------- helpers
 
@@ -92,25 +93,79 @@ end
 
 -- Device messages carry only flat scalar params: Director serializes
 -- SendToDevice as c4soap XML, and embedding raw JSON strings in param values
--- has crashed Director sessions in the field. The cover protocol needs just
--- these fields, so flatten them out of the HA state object.
+-- has crashed Director sessions in the field. Each supported domain
+-- whitelists the attributes its device driver needs (param key -> HA
+-- attribute name); lists flatten to CSV strings, JSON nulls fail the
+-- number/string guards and are omitted. Unknown domains push entity_id and
+-- state only.
+local DOMAIN_ATTRS = {
+	cover = {
+		numbers = {
+			position = 'current_position',
+			tilt_position = 'current_tilt_position',
+			supported_features = 'supported_features',
+		},
+		strings = { device_class = 'device_class' },
+	},
+	climate = {
+		numbers = {
+			supported_features = 'supported_features',
+			current_temperature = 'current_temperature',
+			temperature = 'temperature',
+			target_temp_low = 'target_temp_low',
+			target_temp_high = 'target_temp_high',
+			min_temp = 'min_temp',
+			max_temp = 'max_temp',
+			target_temp_step = 'target_temp_step',
+			current_humidity = 'current_humidity',
+		},
+		strings = {
+			hvac_action = 'hvac_action',
+			fan_mode = 'fan_mode',
+			preset_mode = 'preset_mode',
+		},
+		lists = {
+			hvac_modes = 'hvac_modes',
+			fan_modes = 'fan_modes',
+			preset_modes = 'preset_modes',
+		},
+		send_unit = true, -- climate values only make sense with their unit
+	},
+}
+
 local function push_state(device_id, entity_id, state)
 	local attributes = type(state.attributes) == 'table' and state.attributes or {}
 	local params = {
 		entity_id = entity_id,
 		state = type(state.state) == 'string' and state.state or 'unknown',
 	}
-	if tonumber(attributes.current_position) then
-		params.position = tonumber(attributes.current_position)
-	end
-	if tonumber(attributes.current_tilt_position) then
-		params.tilt_position = tonumber(attributes.current_tilt_position)
-	end
-	if type(attributes.device_class) == 'string' then
-		params.device_class = attributes.device_class
-	end
-	if tonumber(attributes.supported_features) then
-		params.supported_features = tonumber(attributes.supported_features)
+	local domain = entity_id:match('^([%w_]+)%.')
+	local spec = domain and DOMAIN_ATTRS[domain]
+	if spec then
+		for key, attr in pairs(spec.numbers or {}) do
+			if tonumber(attributes[attr]) then
+				params[key] = tonumber(attributes[attr])
+			end
+		end
+		for key, attr in pairs(spec.strings or {}) do
+			if type(attributes[attr]) == 'string' then
+				params[key] = attributes[attr]
+			end
+		end
+		for key, attr in pairs(spec.lists or {}) do
+			if type(attributes[attr]) == 'table' then
+				local items = {}
+				for _, item in ipairs(attributes[attr]) do
+					if type(item) == 'string' then
+						items[#items + 1] = item
+					end
+				end
+				params[key] = table.concat(items, ',')
+			end
+		end
+		if spec.send_unit then
+			params.temperature_unit = ha_unit
+		end
 	end
 	log.debug('push state', entity_id, params.state, '-> device', device_id)
 	C4:SendToDevice(device_id, msg.STATE, params, true, false)
@@ -194,17 +249,7 @@ local function start_heartbeat()
 	end, true)
 end
 
-local function on_auth_ok(data)
-	phase = 'connected'
-	backoff_s = BACKOFF_MIN_S
-	timer.cancel('auth_timeout')
-	set_status('Connected')
-	if data.ha_version then
-		C4:UpdateProperty('HA Version', tostring(data.ha_version))
-	end
-	log.info('connected to Home Assistant', data.ha_version or '')
-	start_heartbeat()
-
+local function start_sync()
 	send_command({ type = 'get_states' }, 'get_states', function(ok, result, err)
 		if not ok then
 			log.error('get_states failed:', err)
@@ -239,6 +284,31 @@ local function on_auth_ok(data)
 			end
 		end
 	)
+end
+
+local function on_auth_ok(data)
+	phase = 'connected'
+	backoff_s = BACKOFF_MIN_S
+	timer.cancel('auth_timeout')
+	set_status('Connected')
+	if data.ha_version then
+		C4:UpdateProperty('HA Version', tostring(data.ha_version))
+	end
+	log.info('connected to Home Assistant', data.ha_version or '')
+	start_heartbeat()
+
+	-- Detect the server temperature unit BEFORE any state is pushed:
+	-- get_states/subscribe_events run from this callback, so every climate
+	-- push carries the right temperature_unit. On failure the last known
+	-- (default 'C') unit stays -- it is per-site static.
+	send_command({ type = 'get_config' }, 'get_config', function(ok, result)
+		if ok and type(result) == 'table' and type(result.unit_system) == 'table' then
+			local unit = result.unit_system.temperature
+			ha_unit = (unit == '°F' or unit == 'F') and 'F' or 'C'
+			log.debug('HA temperature unit:', ha_unit)
+		end
+		start_sync()
+	end)
 end
 
 local function on_event(data)
@@ -428,8 +498,12 @@ end
 
 -- Flat params over the binding (no JSON on the wire): domain, service,
 -- entity_id, plus any service_data fields the device driver needs -- covers
--- use position/tilt_position. The HA call is assembled here.
-local SERVICE_DATA_FIELDS = { 'position', 'tilt_position' }
+-- use position/tilt_position, climate the temperature/mode fields. The HA
+-- call is assembled here; domain/service/entity_id never leak into
+-- service_data.
+local SERVICE_NUMBER_FIELDS =
+	{ 'position', 'tilt_position', 'temperature', 'target_temp_low', 'target_temp_high' }
+local SERVICE_STRING_FIELDS = { 'hvac_mode', 'fan_mode', 'preset_mode' }
 
 RFP[msg.CALL_SERVICE] = function(_, _, tParams)
 	local domain, service = tParams.domain, tParams.service
@@ -442,9 +516,14 @@ RFP[msg.CALL_SERVICE] = function(_, _, tParams)
 		call.target = { entity_id = tParams.entity_id }
 	end
 	local data = {}
-	for _, field in ipairs(SERVICE_DATA_FIELDS) do
+	for _, field in ipairs(SERVICE_NUMBER_FIELDS) do
 		if tonumber(tParams[field]) then
 			data[field] = tonumber(tParams[field])
+		end
+	end
+	for _, field in ipairs(SERVICE_STRING_FIELDS) do
+		if type(tParams[field]) == 'string' and tParams[field] ~= '' then
+			data[field] = tParams[field]
 		end
 	end
 	if next(data) then

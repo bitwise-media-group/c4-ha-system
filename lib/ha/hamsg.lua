@@ -23,12 +23,22 @@ return {
 	-- device -> gateway
 	REGISTER = 'HA_REGISTER', -- {entity_id, device_id}
 	UNREGISTER = 'HA_UNREGISTER', -- {entity_id, device_id}
-	CALL_SERVICE = 'HA_CALL_SERVICE', -- {domain, service, entity_id, position?, tilt_position?}
+	CALL_SERVICE = 'HA_CALL_SERVICE', -- {domain, service, entity_id,
+	--   numbers: position?, tilt_position?, temperature?, target_temp_low?,
+	--            target_temp_high?
+	--   strings: hvac_mode?, fan_mode?, preset_mode?}
 	LIST_ENTITIES = 'HA_LIST_ENTITIES', -- {domain, device_id}
 
 	-- gateway -> device
-	STATE = 'HA_STATE', -- {entity_id, state, position?, tilt_position?,
-	--                      device_class?, supported_features?}
+	STATE = 'HA_STATE', -- {entity_id, state} plus a per-domain attribute
+	--   whitelist, all flat scalars (lists flattened to CSV strings):
+	--   cover:   position?, tilt_position?, device_class?, supported_features?
+	--   climate: supported_features?, current_temperature?, temperature?,
+	--            target_temp_low?, target_temp_high?, min_temp?, max_temp?,
+	--            target_temp_step?, current_humidity?, hvac_action?,
+	--            fan_mode?, preset_mode?, hvac_modes?, fan_modes?,
+	--            preset_modes?, temperature_unit ('C'|'F', from the HA
+	--            server config, injected by the gateway)
 	ENTITY_LIST = 'HA_ENTITY_LIST', -- {domain, entities = 'id1,id2,...'}
 	CONNECTION = 'HA_CONNECTION', -- {connected = 'true'|'false'}
 }
