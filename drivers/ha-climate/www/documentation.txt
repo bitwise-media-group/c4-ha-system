@@ -1,0 +1,31 @@
+Home Assistant Climate (Bitwise Media Group)
+
+Represents one Home Assistant climate entity (thermostat, heat pump, air
+conditioner, ...) as a Control4 thermostat.
+
+Requires the Home Assistant Gateway driver in the project. The driver binds to
+the gateway automatically.
+
+Setup
+1. Add one Home Assistant Climate driver per climate entity.
+2. While the gateway is connected, pick the entity from the Entity Selector
+   list, or type the entity_id (e.g. climate.living_room) into Entity ID.
+
+The driver adapts to the entity's capabilities from Home Assistant:
+
+- HVAC modes follow the entity. Home Assistant's heat_cool (or auto with a
+  target range) appears as Auto in Control4 with separate heat and cool
+  setpoints; heat/cool/dry use a single setpoint; dry shows as Dry and
+  fan_only as Fan. If an entity offers both auto and heat_cool, only
+  heat_cool is reachable as Auto.
+- Fan modes appear when the entity has them, using Home Assistant's mode
+  names verbatim.
+- Current humidity is shown when the entity reports it.
+- Home Assistant presets (eco, away, boost, ...) appear under Extras.
+- Setpoint limits and step follow the entity's min/max and step.
+
+Temperatures follow the Home Assistant server's configured unit
+automatically; no unit setup is needed.
+
+Not supported: hold modes, humidity setpoints, and thermostat scheduling
+(use Home Assistant automations instead).
