@@ -1,0 +1,135 @@
+<devicedata>
+	<copyright>Copyright 2026 Bitwise Media Group. MIT License.</copyright>
+	<creator>Bitwise Media Group</creator>
+	<manufacturer>Bitwise Media Group</manufacturer>
+	<name>Home Assistant Cover</name>
+	<model>Home Assistant Cover</model>
+	<created>08/04/2026 12:00</created>
+	<modified>08/04/2026 12:00</modified>
+	<version>1</version>
+	<control>lua_gen</control>
+	<controlmethod>IP</controlmethod>
+	<driver>DriverWorks</driver>
+	<auto_update>false</auto_update>
+	<minimum_os_version>3.3.0</minimum_os_version>
+	<proxies>
+		<proxy proxybindingid="5001" name="Home Assistant Cover">blind</proxy>
+	</proxies>
+	<capabilities>
+		<has_level>true</has_level>
+		<level_closed>0</level_closed>
+		<level_open>100</level_open>
+		<level_discrete_control>true</level_discrete_control>
+		<level_unknown>-1</level_unknown>
+		<can_stop>true</can_stop>
+		<driver_handles_toggle>false</driver_handles_toggle>
+		<always_send_level>true</always_send_level>
+	</capabilities>
+	<config>
+		<script jit="1" file="driver.lua"></script>
+		<documentation file="www/documentation.txt">Represents one Home Assistant cover entity (shade, blind, curtain, shutter, awning, garage door, gate) as a Control4 blind. Requires the Home Assistant Gateway driver in the project; pick the entity with the Entity Selector property or type its entity_id.</documentation>
+		<properties>
+			<property>
+				<name>Driver Version</name>
+				<type>STRING</type>
+				<default></default>
+				<readonly>true</readonly>
+			</property>
+			<property>
+				<name>Entity Selector</name>
+				<type>DYNAMIC_LIST</type>
+				<readonly>false</readonly>
+				<tooltip>Pick a cover entity discovered from Home Assistant (populated while the gateway is connected)</tooltip>
+			</property>
+			<property>
+				<name>Entity ID</name>
+				<type>STRING</type>
+				<default></default>
+				<readonly>false</readonly>
+				<tooltip>Home Assistant entity_id, e.g. cover.living_room_blind</tooltip>
+			</property>
+			<property>
+				<name>Travel Time (seconds)</name>
+				<type>RANGED_INTEGER</type>
+				<minimum>1</minimum>
+				<maximum>600</maximum>
+				<default>15</default>
+				<readonly>false</readonly>
+				<tooltip>Approximate full open-to-close travel time; used to animate movement in Control4 interfaces</tooltip>
+			</property>
+			<property>
+				<name>Cover State</name>
+				<type>STRING</type>
+				<default></default>
+				<readonly>true</readonly>
+			</property>
+			<property>
+				<name>Device Class</name>
+				<type>STRING</type>
+				<default></default>
+				<readonly>true</readonly>
+			</property>
+			<property>
+				<name>Current Position</name>
+				<type>STRING</type>
+				<default></default>
+				<readonly>true</readonly>
+			</property>
+			<property>
+				<name>Supported Features</name>
+				<type>STRING</type>
+				<default></default>
+				<readonly>true</readonly>
+			</property>
+			<property>
+				<name>Debug Mode</name>
+				<type>LIST</type>
+				<items>
+					<item>Off</item>
+					<item>On</item>
+				</items>
+				<default>Off</default>
+				<readonly>false</readonly>
+			</property>
+		</properties>
+		<actions />
+		<commands />
+	</config>
+	<events />
+	<connections>
+		<connection>
+			<id>5001</id>
+			<facing>6</facing>
+			<connectionname>BLIND</connectionname>
+			<type>2</type>
+			<consumer>False</consumer>
+			<audiosource>False</audiosource>
+			<videosource>False</videosource>
+			<linelevel>False</linelevel>
+			<classes>
+				<class>
+					<classname>BLIND</classname>
+				</class>
+			</classes>
+		</connection>
+		<connection>
+			<id>999</id>
+			<facing>1</facing>
+			<connectionname>Home Assistant Gateway</connectionname>
+			<type>1</type>
+			<consumer>True</consumer>
+			<audiosource>False</audiosource>
+			<videosource>False</videosource>
+			<linelevel>False</linelevel>
+			<classes>
+				<class>
+					<classname>HOMEASSISTANT</classname>
+					<autobind>True</autobind>
+				</class>
+			</classes>
+		</connection>
+	</connections>
+	<composer_categories>
+		<category>Blinds/Shades</category>
+	</composer_categories>
+</devicedata>

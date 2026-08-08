@@ -1,0 +1,20 @@
+Home Assistant Cover (Bitwise Media Group)
+
+Represents one Home Assistant cover entity (shade, blind, curtain, shutter,
+awning, garage door, gate) as a Control4 blind.
+
+Requires the Home Assistant Gateway driver in the project. The driver binds to
+the gateway automatically.
+
+Setup
+1. Add one Home Assistant Cover driver per cover entity.
+2. While the gateway is connected, pick the entity from the Entity Selector
+   list, or type the entity_id (e.g. cover.living_room_blind) into Entity ID.
+3. Set Travel Time to roughly match the cover's full open-to-close time so
+   Control4 interfaces animate movement accurately.
+
+The driver adapts to the entity's capabilities from Home Assistant: position
+control when supported (0-100), plain open/close otherwise, stop when the
+cover supports it, and tilt for tilt-only covers. Choose the Control4 blind
+type (shade, awning, door, ...) on the proxy in Composer; the Home Assistant
+device_class is shown in the read-only Device Class property as a guide.
