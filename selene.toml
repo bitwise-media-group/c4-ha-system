@@ -1,0 +1,8 @@
+# Copyright 2026 BitWise Media Group Ltd
+# SPDX-License-Identifier: MIT
+#
+# Lua lint configuration. The c4 standard library (c4.yml) extends lua51 with
+# the Control4 DriverWorks environment: the C4 API table, Director-populated
+# globals, and the dispatch tables / entry points drivers define.
+
+std = "c4"

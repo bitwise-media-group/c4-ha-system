@@ -1,0 +1,58 @@
+# Copyright 2026 BitWise Media Group Ltd
+# SPDX-License-Identifier: MIT
+#
+# selene standard library for the Control4 DriverWorks Lua environment
+# (LuaJIT / Lua 5.1). Declared `any` because the C4 surface is large and the
+# driver both reads and assigns these globals.
+---
+base: lua51
+globals:
+  # selene's lua51 std models io.stderr without methods; the test harness
+  # writes failures to it
+  io.stderr:
+    any: true
+  # Control4 API
+  C4:
+    any: true
+  # Director-populated globals
+  Properties:
+    any: true
+  PersistData:
+    any: true
+  # LuaJIT bit library (preloaded as a global in the C4 environment)
+  bit:
+    any: true
+  # dispatch tables defined by ha.handlers
+  EC:
+    any: true
+  OPC:
+    any: true
+  RFP:
+    any: true
+  OCS:
+    any: true
+  RFN:
+    any: true
+  OBC:
+    any: true
+  # Director callback entry points assigned by drivers
+  ExecuteCommand:
+    any: true
+  OnPropertyChanged:
+    any: true
+  ReceivedFromProxy:
+    any: true
+  OnConnectionStatusChanged:
+    any: true
+  ReceivedFromNetwork:
+    any: true
+  OnBindingChanged:
+    any: true
+  OnDriverInit:
+    any: true
+  OnDriverLateInit:
+    any: true
+  OnDriverDestroyed:
+    any: true
+  OnDriverRemovedFromProject:
+    any: true

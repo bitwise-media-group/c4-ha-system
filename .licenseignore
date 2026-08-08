@@ -1,0 +1,6 @@
+certs/**
+dist/**
+drivers/**/driver.xml
+drivers/**/*.c4zproj
+drivers/**/www/**
+version.txt

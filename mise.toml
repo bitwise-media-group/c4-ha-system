@@ -1,0 +1,33 @@
+# Copyright 2026 BitWise Media Group Ltd
+# SPDX-License-Identifier: MIT
+#
+# c4-ha-system consumes the shared toolchain (bitwise-media-group/toolchain)
+# as the .mise/ submodule: pinned tools and the markdown-lib archetype (prose
+# lint, license headers, shell/container lint) come from there, and the
+# Makefile is a thin forwarder (.mise/mise.mk). The Lua-specific toolset and
+# the canonical fmt/lint/build/test tasks live in tasks.toml, included after
+# the archetype so its same-named aggregates replace the archetype's.
+
+[task_config]
+includes = [".mise/tasks/markdown-lib.toml", "tasks.toml"]
+
+[tools]
+# Lua tools the toolchain does not pin (candidates for upstreaming to
+# toolchain config.toml; locked in this repo's own mise.lock meanwhile).
+#
+# lua 5.1.5 is the test interpreter: the closest immutable pin to the
+# controllers' LuaJIT runtime (LuaJIT itself ships rolling, untagged releases
+# and builds from source, so it cannot be pinned reproducibly). PUC 5.1 has no
+# `bit` library, which is exactly why lib/ha/bits.lua carries a pure-Lua
+# fallback -- CI exercises the fallback path, local luajit (if on PATH, the
+# test task prefers it) exercises the native path.
+#
+# Deliberately the registry-default vfox backend: the asdf mise-lua plugin
+# hard-fails when its bundled LuaRocks install trips (unauthenticated GitHub
+# API lookup -> 403 rate limit), while vfox-lua treats that sub-step as
+# non-fatal -- and this repo needs no LuaRocks at all.
+lua = "5.1.5"
+# Lua formatter (prebuilt binary; config in stylua.toml)
+"aqua:JohnnyMorganz/StyLua" = "2.5.2"
+# Lua linter (prebuilt binary; config in selene.toml + the c4.yml std library)
+"github:Kampfkarren/selene" = "0.31.0"
