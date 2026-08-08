@@ -1,0 +1,14 @@
+<Driver type="c4z" name="ha-gateway" squishLua="false">
+<Items>
+	<Item type="file" name="driver.xml" c4zDir=""/>
+	<Item type="file" name="driver.lua" c4zDir=""/>
+	<Item type="dir" name="www" c4zDir="www" recurse="true"/>
+	<Item type="file" name="./../../lib/ha/handlers.lua" c4zDir="ha"/>
+	<Item type="file" name="./../../lib/ha/hamsg.lua" c4zDir="ha"/>
+	<Item type="file" name="./../../lib/ha/json.lua" c4zDir="ha"/>
+	<Item type="file" name="./../../lib/ha/log.lua" c4zDir="ha"/>
+	<Item type="file" name="./../../lib/ha/timer.lua" c4zDir="ha"/>
+	<Item type="file" name="./../../lib/ha/websocket.lua" c4zDir="ha"/>
+	<Item type="file" name="./../../certs/isrg-root.pem" c4zDir="certs"/>
+</Items>
+</Driver>

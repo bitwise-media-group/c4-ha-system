@@ -1,0 +1,22 @@
+Home Assistant Gateway (Bitwise Media Group)
+
+System driver that owns a secure websocket session to Home Assistant. Add exactly
+one to a project.
+
+Setup
+1. In Home Assistant, create a long-lived access token (Profile -> Security).
+2. Set Host and Port (8123 direct, or 443 behind an nginx reverse proxy).
+3. Leave Use SSL = Yes and Verify Certificate = Yes for an nginx + Let's Encrypt
+   deployment; certificates are verified against the bundled ISRG roots.
+4. Paste the token into Access Token. It is stored encrypted and the field is
+   masked afterwards.
+5. Status shows Connected once the websocket authenticates. Use the
+   Test Connection action to check the REST API and token independently.
+
+Device drivers (e.g. Home Assistant Cover) bind automatically to this driver and
+register the entities they represent; state flows both ways in real time.
+
+Programming
+- Events: Home Assistant Connected / Disconnected.
+- Command: Call Service (Service = domain.service, optional Entity ID, optional
+  JSON Data) to invoke any Home Assistant service.

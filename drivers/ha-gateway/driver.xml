@@ -1,0 +1,171 @@
+<devicedata>
+	<copyright>Copyright 2026 Bitwise Media Group. MIT License.</copyright>
+	<creator>Bitwise Media Group</creator>
+	<manufacturer>Bitwise Media Group</manufacturer>
+	<name>Home Assistant Gateway</name>
+	<model>Home Assistant Gateway</model>
+	<created>08/04/2026 12:00</created>
+	<modified>08/04/2026 12:00</modified>
+	<version>1</version>
+	<control>lua_gen</control>
+	<controlmethod>IP</controlmethod>
+	<driver>DriverWorks</driver>
+	<auto_update>false</auto_update>
+	<minimum_os_version>3.0.0</minimum_os_version>
+	<combo>true</combo>
+	<proxies>
+		<proxy>ha-gateway</proxy>
+	</proxies>
+	<config>
+		<script jit="1" file="driver.lua"></script>
+		<SINGLETON_ID>bitwise_ha_gateway</SINGLETON_ID>
+		<documentation file="www/documentation.txt">System driver that connects Control4 to Home Assistant over a secure websocket. Add one per project, set Host/Port/SSL and a long-lived access token, then bind Home Assistant device drivers (e.g. Home Assistant Cover) to it.</documentation>
+		<properties>
+			<property>
+				<name>Driver Version</name>
+				<type>STRING</type>
+				<default></default>
+				<readonly>true</readonly>
+			</property>
+			<property>
+				<name>Status</name>
+				<type>STRING</type>
+				<default>Not connected</default>
+				<readonly>true</readonly>
+			</property>
+			<property>
+				<name>HA Version</name>
+				<type>STRING</type>
+				<default></default>
+				<readonly>true</readonly>
+			</property>
+			<property>
+				<name>Host</name>
+				<type>STRING</type>
+				<default></default>
+				<readonly>false</readonly>
+				<tooltip>Hostname or IP of Home Assistant (no scheme, no path), e.g. ha.example.com</tooltip>
+			</property>
+			<property>
+				<name>Port</name>
+				<type>RANGED_INTEGER</type>
+				<minimum>1</minimum>
+				<maximum>65535</maximum>
+				<default>8123</default>
+				<readonly>false</readonly>
+				<tooltip>8123 for direct access; 443 behind an nginx reverse proxy</tooltip>
+			</property>
+			<property>
+				<name>Use SSL</name>
+				<type>LIST</type>
+				<items>
+					<item>No</item>
+					<item>Yes</item>
+				</items>
+				<default>Yes</default>
+				<readonly>false</readonly>
+			</property>
+			<property>
+				<name>Verify Certificate</name>
+				<type>LIST</type>
+				<items>
+					<item>Yes</item>
+					<item>No</item>
+				</items>
+				<default>Yes</default>
+				<readonly>false</readonly>
+				<tooltip>Yes verifies the server certificate against the bundled Let's Encrypt roots; set No for self-signed certificates</tooltip>
+			</property>
+			<property>
+				<name>Access Token</name>
+				<type>STRING</type>
+				<default></default>
+				<readonly>false</readonly>
+				<password>true</password>
+				<tooltip>Home Assistant long-lived access token (Profile - Security). Stored encrypted; the field shows a mask once saved.</tooltip>
+			</property>
+			<property>
+				<name>Debug Mode</name>
+				<type>LIST</type>
+				<items>
+					<item>Off</item>
+					<item>On</item>
+				</items>
+				<default>Off</default>
+				<readonly>false</readonly>
+			</property>
+		</properties>
+		<actions>
+			<action>
+				<name>Connect</name>
+				<command>Connect</command>
+			</action>
+			<action>
+				<name>Disconnect</name>
+				<command>Disconnect</command>
+			</action>
+			<action>
+				<name>Test Connection</name>
+				<command>Test Connection</command>
+			</action>
+			<action>
+				<name>Print Registry</name>
+				<command>Print Registry</command>
+			</action>
+		</actions>
+		<commands>
+			<command>
+				<name>Call Service</name>
+				<description>Call Home Assistant service PARAM1 on PARAM2 with PARAM3</description>
+				<params>
+					<param>
+						<name>Service</name>
+						<type>STRING</type>
+					</param>
+					<param>
+						<name>Entity ID</name>
+						<type>STRING</type>
+					</param>
+					<param>
+						<name>Data</name>
+						<type>STRING</type>
+					</param>
+				</params>
+			</command>
+		</commands>
+	</config>
+	<capabilities />
+	<events>
+		<event>
+			<id>1</id>
+			<name>Home Assistant Connected</name>
+			<description>NAME connected to Home Assistant</description>
+		</event>
+		<event>
+			<id>2</id>
+			<name>Home Assistant Disconnected</name>
+			<description>NAME disconnected from Home Assistant</description>
+		</event>
+	</events>
+	<connections>
+		<connection>
+			<id>1</id>
+			<facing>2</facing>
+			<connectionname>Home Assistant Devices</connectionname>
+			<type>1</type>
+			<consumer>False</consumer>
+			<audiosource>False</audiosource>
+			<videosource>False</videosource>
+			<linelevel>False</linelevel>
+			<classes>
+				<class>
+					<classname>HOMEASSISTANT</classname>
+					<autobind>True</autobind>
+				</class>
+			</classes>
+		</connection>
+	</connections>
+	<composer_categories>
+		<category>Others</category>
+	</composer_categories>
+</devicedata>
