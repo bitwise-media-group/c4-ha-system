@@ -11,7 +11,7 @@
 # the toolchain submodule at .mise/ plus this repo's own Lua additions in the
 # root mise.toml.
 #
-# Pinned to a full commit SHA (tag in the comment); Dependabot keeps it fresh.
+# Pinned to a full commit SHA (tag in the comment); Renovate keeps it fresh.
 
 name: Continuous Integration
 
