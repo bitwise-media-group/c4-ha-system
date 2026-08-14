@@ -26,7 +26,7 @@ includes = [".mise/tasks/markdown-lib.toml", "tasks.toml"]
 # hard-fails when its bundled LuaRocks install trips (unauthenticated GitHub
 # API lookup -> 403 rate limit), while vfox-lua treats that sub-step as
 # non-fatal -- and this repo needs no LuaRocks at all.
-lua = "5.1.5"
+lua = "5.5.1"
 # Lua formatter (prebuilt binary; config in stylua.toml)
 "aqua:JohnnyMorganz/StyLua" = "2.5.2"
 # Lua linter (prebuilt binary; config in selene.toml + the c4.yml std library)
