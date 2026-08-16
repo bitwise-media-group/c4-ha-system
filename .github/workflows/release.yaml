@@ -13,7 +13,7 @@
 # Manifest mode: configuration lives in release-please-config.json and the
 # current version in .release-please-manifest.json at the repo root.
 #
-# Pinned to a full commit SHA (tag in the comment); Dependabot keeps it fresh.
+# Pinned to a full commit SHA (tag in the comment); Renovate keeps it fresh.
 
 name: Release
 
