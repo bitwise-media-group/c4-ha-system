@@ -27,7 +27,7 @@ permissions:
 
 jobs:
   ci:
-    uses: bitwise-media-group/github-workflows/.github/workflows/ci.yaml@b9c031429f149794bedb5411b08d5a787b8d9959 # v6.0.1
+    uses: bitwise-media-group/github-workflows/.github/workflows/ci.yaml@1eaff010e2929a3583c50ffa325690216bc70462 # v6.2.0
     with:
       # the Lua test harness emits no coverage files — skip the Codecov upload
       coverage: false

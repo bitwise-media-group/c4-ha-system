@@ -47,7 +47,7 @@ permissions:
 
 jobs:
   release:
-    uses: bitwise-media-group/github-workflows/.github/workflows/release.yaml@b9c031429f149794bedb5411b08d5a787b8d9959 # v6.0.1
+    uses: bitwise-media-group/github-workflows/.github/workflows/release.yaml@1eaff010e2929a3583c50ffa325690216bc70462 # v6.2.0
     with:
       # author the release PR as the FF Merge App so it can auto-merge (a
       # GITHUB_TOKEN-authored push fires no workflow_run to trigger the merge)
