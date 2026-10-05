@@ -30,4 +30,4 @@ lua = "5.1.5"
 # Lua formatter (prebuilt binary; config in stylua.toml)
 "aqua:JohnnyMorganz/StyLua" = "2.5.2"
 # Lua linter (prebuilt binary; config in selene.toml + the c4.yml std library)
-"github:Kampfkarren/selene" = "0.31.0"
+"github:Kampfkarren/selene" = "0.32.0"
