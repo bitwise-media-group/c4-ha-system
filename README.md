@@ -72,7 +72,7 @@ certs/                ISRG roots for TLS peer verification
 scripts/build.sh      assembles dist/<name>.c4z, stamps the shared version
 scripts/test.sh       runs the test suites (luajit or lua5.1)
 tests/                C4-stubbed unit/integration tests for the protocol logic
-.mise/                shared toolchain submodule (pinned tools, task archetypes)
+.mise/                shared toolchain submodule (pinned tools, common tasks)
 ```
 
 ## Development
@@ -81,11 +81,11 @@ Tooling is pinned through [mise](https://mise.jdx.dev) via the shared toolchain 
 after cloning; `brew install mise`). The Makefile is a thin forwarder — `make <task>` is `mise run <task>`:
 
 ```sh
-make fmt     # stylua + prose format + SPDX license headers
-make lint    # selene + stylua --check + prose/shell/container/license checks
+make fmt     # prose format + SPDX license headers + stylua
+make lint    # prose/shell/container/workflow/license checks + selene + stylua --check
 make build   # produce dist/*.c4z
 make test    # run the C4-stubbed test suites
-make pr      # the full local gate: fmt, lint, build, test, commit
+make pr      # the full local gate: fmt, lint, test, build
 ```
 
 Lua tools: [StyLua](https://github.com/JohnnyMorganz/StyLua) formats, [selene](https://github.com/Kampfkarren/selene)

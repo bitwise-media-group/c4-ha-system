@@ -1,9 +1,10 @@
 # Copyright 2026 BitWise Media Group Ltd
 # SPDX-License-Identifier: MIT
 #
-# Repo-local tasks. Included after the markdown-lib archetype (see mise.toml),
-# so the fmt/lint/ci/pr aggregates here replace the archetype's and weave the
-# Lua steps in with the universal prose/license/shell passes.
+# Repo-local tasks. Included after the toolchain's common/tasks.toml (see
+# mise.toml), so the fmt/lint/ci/pr rollups here replace common's whole-task:
+# fmt and lint repeat common's rollups and append the Lua steps, and build/test
+# are canonical task names, so the reusable CI workflow discovers and runs them.
 #
 # Included task files use the simplified format: top-level keys ARE task names.
 
@@ -20,15 +21,16 @@ dir = "{{config_root}}"
 run = ["selene lib drivers tests", "stylua --check lib drivers tests"]
 
 [fmt]
-description = "format Lua, prose; inject license headers"
-run = [{ task = "fmt-lua" }, { task = "fmt-prose" }, { task = "license" }]
+description = "format prose, inject license headers, format Lua"
+run = [{ task = "fmt-prose" }, { task = "license" }, { task = "fmt-lua" }]
 
 [lint]
-description = "Lua lint (selene + stylua) + prose/shell/container/license checks"
+description = "prose lint + license, container, shell and workflow checks, plus Lua lint (selene + stylua)"
 run = [
   { task = "license-check" },
   { task = "lint-containers" },
   { task = "lint-shell" },
+  { task = "lint-workflows" },
   { task = "lint-prose" },
   { task = "lint-lua" },
 ]
@@ -45,14 +47,9 @@ run = "sh scripts/test.sh"
 
 [ci]
 description = "the gates the reusable CI workflow runs"
-run = [{ task = "lint" }, { task = "build" }, { task = "test" }]
+run = [{ task = "lint" }, { task = "test" }, { task = "build" }]
 
+# common's pr has no commit step, so neither does this one.
 [pr]
 description = "full local gate before a pull request"
-run = [
-  { task = "fmt" },
-  { task = "lint" },
-  { task = "build" },
-  { task = "test" },
-  { task = "commit" },
-]
+run = [{ task = "fmt" }, { task = "lint" }, { task = "test" }, { task = "build" }]

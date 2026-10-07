@@ -1,0 +1,40 @@
+# Copyright 2026 BitWise Media Group Ltd
+# SPDX-License-Identifier: MIT
+
+# Security analysis — thin caller for the org's reusable security workflow. It runs CodeQL
+# over this repo's GitHub Actions workflows (build-free) on every push and pull request,
+# plus a weekly scheduled run so newly published queries reach already-merged code.
+#
+# languages is pinned to "actions": the drivers are Lua, which CodeQL does not support,
+# so the workflows are the only code it can scan. Pinning it also documents that intent
+# rather than leaving it to root detection.
+#
+# The "Security Analysis" check this raises is listed in merge.yaml, so a merge attempt
+# waits for it.
+#
+# Pinned to a full commit SHA (tag in the comment) so a moved tag can never change
+# what runs.
+
+name: Security Analysis
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: ["main", "releases/*"]
+  schedule:
+    # weekly re-scan so newly published CodeQL queries reach already-merged code
+    - cron: "41 20 * * 4"
+
+# ceiling for the reusable workflow's analyze job
+permissions:
+  security-events: write # upload analysis results to code scanning
+  packages: read # fetch internal or private CodeQL packs
+  actions: read # only required for workflows in private repositories
+  contents: read # check out the repository
+
+jobs:
+  analyze:
+    uses: bitwise-media-group/github-workflows/.github/workflows/security.yaml@fea4c5284a9d3679c64f0e2cac5810124e0294d2 # v7.0.0
+    with:
+      languages: actions

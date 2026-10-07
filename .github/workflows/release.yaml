@@ -13,7 +13,7 @@
 # Manifest mode: configuration lives in release-please-config.json and the
 # current version in .release-please-manifest.json at the repo root.
 #
-# Pinned to a full commit SHA (tag in the comment); Dependabot keeps it fresh.
+# Pinned to a full commit SHA (tag in the comment); Renovate keeps it fresh.
 
 name: Release
 
@@ -21,33 +21,36 @@ on:
   push:
     branches: [main]
 
-# Ceiling for the reusable workflow's jobs. GitHub resolves a reusable
-# workflow's permissions as the union of every job and ignores `if:`, so the
-# caller must grant every scope any job declares — even the goreleaser/publish
-# and docs jobs that are skipped here — or the run fails at startup. Each
-# reusable job narrows to its own declared scopes; the jobs that actually run
-# (release-please, upload-drivers) use contents/issues/pull-requests.
-permissions:
-  # create release commits, tags, and GitHub Releases; upload release assets
-  contents: write
-  # release-please creates PR labels via the issues API
-  issues: write
-  # open and update the release PR
-  pull-requests: write
-  # cosign keyless signing (goreleaser) + the docs job's Pages OIDC deploy
-  id-token: write
-  # GitHub build-provenance attestation (goreleaser/publish)
-  attestations: write
-  # artifact storage record for the attestation (goreleaser/publish)
-  artifact-metadata: write
-  # push container images to ghcr (goreleaser dockers_v2, when configured)
-  packages: write
-  # publish the docs site to GitHub Pages (docs job, when a zensical.toml exists)
-  pages: write
+# Grants are per job: the reusable call carries its own ceiling and
+# upload-drivers narrows to contents:write.
+permissions: {}
 
 jobs:
   release:
-    uses: bitwise-media-group/github-workflows/.github/workflows/release.yaml@b9c031429f149794bedb5411b08d5a787b8d9959 # v6.0.1
+    # Ceiling for the reusable workflow's jobs. GitHub resolves a reusable
+    # workflow's permissions as the union of every job and ignores `if:`, so the
+    # caller must grant every scope any job declares — even the goreleaser/publish
+    # and docs jobs that are skipped here — or the run fails at startup. Each
+    # reusable job narrows to its own declared scopes; the job that actually runs
+    # (release-please) uses contents/issues/pull-requests.
+    permissions:
+      # create release commits, tags, and GitHub Releases
+      contents: write
+      # release-please creates PR labels via the issues API
+      issues: write
+      # open and update the release PR
+      pull-requests: write
+      # cosign keyless signing (goreleaser) + the docs job's Pages OIDC deploy
+      id-token: write
+      # GitHub build-provenance attestation (goreleaser/publish)
+      attestations: write
+      # artifact storage record for the attestation (goreleaser/publish)
+      artifact-metadata: write
+      # push container images to ghcr (goreleaser dockers_v2, when configured)
+      packages: write
+      # publish the docs site to GitHub Pages (docs job, when a zensical.toml exists)
+      pages: write
+    uses: bitwise-media-group/github-workflows/.github/workflows/release.yaml@fea4c5284a9d3679c64f0e2cac5810124e0294d2 # v7.0.0
     with:
       # author the release PR as the FF Merge App so it can auto-merge (a
       # GITHUB_TOKEN-authored push fires no workflow_run to trigger the merge)

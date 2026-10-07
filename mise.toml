@@ -2,14 +2,17 @@
 # SPDX-License-Identifier: MIT
 #
 # c4-ha-system consumes the shared toolchain (bitwise-media-group/toolchain)
-# as the .mise/ submodule: pinned tools and the markdown-lib archetype (prose
-# lint, license headers, shell/container lint) come from there, and the
-# Makefile is a thin forwarder (.mise/mise.mk). The Lua-specific toolset and
-# the canonical fmt/lint/build/test tasks live in tasks.toml, included after
-# the archetype so its same-named aggregates replace the archetype's.
+# as the .mise/ submodule: mise loads its config.toml natively as
+# .mise/config.toml (pinned tools and the [vars] knob defaults), and this file
+# selects the task files. There is no Lua archetype, so it includes only
+# common/ (prose lint, license headers, shell/container/workflow lint) and the
+# Makefile is a thin forwarder (.mise/common/include.mk). The Lua toolset is
+# pinned below; the Lua steps and the canonical fmt/lint/build/test tasks live
+# in tasks.toml, included after common so its same-named rollups replace
+# common's.
 
 [task_config]
-includes = [".mise/tasks/markdown-lib.toml", "tasks.toml"]
+includes = [".mise/common/tasks.toml", "tasks.toml"]
 
 [tools]
 # Lua tools the toolchain does not pin (candidates for upstreaming to
